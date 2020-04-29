@@ -1,0 +1,82 @@
+==========================================================================================================================================================================
+//DLL IMPORT
+    private IContainer components = (IContainer) null;
+    public const int WM_NCLBUTTONDOWN = 161;
+    public const int HT_CAPTION = 2;
+    private const int PROCESS_CREATE_THREAD = 2;
+    private const int PROCESS_QUERY_INFORMATION = 1024;
+    private const int PROCESS_VM_OPERATION = 8;
+    private const int PROCESS_VM_WRITE = 32;
+    private const int PROCESS_VM_READ = 16;
+    private const uint MEM_COMMIT = 4096;
+    private const uint MEM_RESERVE = 8192;
+    private const uint PAGE_READWRITE = 4;
+    private PictureBox pictureBox1;
+    private PictureBox picturebutton;
+    private PictureBox pictureBox3;
+
+    [DllImport("user32.dll")]
+    public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool ReleaseCapture();
+
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr OpenProcess(
+      int dwDesiredAccess,
+      bool bInheritHandle,
+      int dwProcessId);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("kernel32", CharSet = CharSet.Ansi, SetLastError = true)]
+    private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr VirtualAllocEx(
+      IntPtr hProcess,
+      IntPtr lpAddress,
+      uint dwSize,
+      uint flAllocationType,
+      uint flProtect);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool WriteProcessMemory(
+      IntPtr hProcess,
+      IntPtr lpBaseAddress,
+      byte[] lpBuffer,
+      uint nSize,
+      out UIntPtr lpNumberOfBytesWritten);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr CreateRemoteThread(
+      IntPtr hProcess,
+      IntPtr lpThreadAttributes,
+      uint dwStackSize,
+      IntPtr lpStartAddress,
+      IntPtr lpParameter,
+      uint dwCreationFlags,
+      IntPtr lpThreadId);
+//DLL IMPORT
+==========================================================================================================================================================================
+//INJECTION / INJECTION BUTTON
+      string path = Path.GetTempPath() + "DLL_NAME";
+      if (File.Exists(path))
+        File.Delete(path);
+      File.WriteAllBytes(path, Resources.PROJECT_NAME);
+      IntPtr hProcess = Main.OpenProcess(1082, false, Process.GetProcessesByName("csgo")[0].Id);
+      IntPtr procAddress = Main.GetProcAddress(Main.GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+      string s = Path.GetTempPath() + "DLL_NAME";
+      IntPtr num = Main.VirtualAllocEx(hProcess, IntPtr.Zero, (uint) ((s.Length + 1) * Marshal.SizeOf(typeof (char))), 12288U, 4U);
+      Main.WriteProcessMemory(hProcess, num, Encoding.Default.GetBytes(s), (uint) ((s.Length + 1) * Marshal.SizeOf(typeof (char))), out UIntPtr _);
+      Main.CreateRemoteThread(hProcess, IntPtr.Zero, 0U, procAddress, num, 0U, IntPtr.Zero);
+      Application.Exit();
+//INJECTION / INJECTION BUTTON
+==========================================================================================================================================================================
+//DISPOSING
+      if (disposing && this.components != null)
+        this.components.Dispose();
+      base.Dispose(disposing);
+//DISPOSING
+==========================================================================================================================================================================
